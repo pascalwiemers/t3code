@@ -61,6 +61,12 @@ in a new thread's model picker to add or remove them. A regular click returns to
 single model. Choose a base branch and send. Each selection starts a separate thread
 and worktree while you stay in the new thread composer. This requires a Git project.
 
+## Filter the thread list
+
+Turn on **Hide offline threads** in the sidebar header on web and desktop, or in
+the thread list filters on mobile. Threads from disconnected machines return
+automatically when those machines reconnect. The preference is saved on this device.
+
 ## Pin and reorder threads
 
 Pin a thread from its menu to keep it above your active work.

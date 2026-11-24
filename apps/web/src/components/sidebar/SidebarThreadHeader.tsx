@@ -1,5 +1,5 @@
 import { useGT } from "gt-react";
-import { SearchIcon, SquarePenIcon, XIcon } from "lucide-react";
+import { SearchIcon, SquarePenIcon, WifiOffIcon, XIcon } from "lucide-react";
 import {
   type ComponentProps,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -16,6 +16,8 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 export interface SidebarThreadHeaderProps {
   hasProjects: boolean;
   projectScope: ReactNode;
+  hideOfflineThreads: boolean;
+  onToggleHideOfflineThreads: () => void;
   onNewThread: (event: ReactMouseEvent) => void;
   newThreadDisabled: boolean;
   newThreadShortcutLabel: string | null | undefined;
@@ -34,6 +36,8 @@ export interface SidebarThreadHeaderProps {
 export function SidebarThreadHeader({
   hasProjects,
   projectScope,
+  hideOfflineThreads,
+  onToggleHideOfflineThreads,
   onNewThread,
   newThreadDisabled,
   newThreadShortcutLabel,
@@ -99,6 +103,14 @@ export function SidebarThreadHeader({
       <div className="flex shrink-0 items-center">
         {hasProjects ? projectScope : null}
         <SidebarHeaderIconButton
+          label={gt("Hide offline threads")}
+          aria-pressed={hideOfflineThreads}
+          isActive={hideOfflineThreads}
+          onClick={onToggleHideOfflineThreads}
+        >
+          <WifiOffIcon />
+        </SidebarHeaderIconButton>
+        <SidebarHeaderIconButton
           label={gt("New thread")}
           tooltip={
             showNewThreadInProjectHint ? (
@@ -139,7 +151,7 @@ export function SidebarHeaderIconButton({
   children?: ReactNode;
 } & Omit<
   ComponentProps<typeof SidebarMenuButton>,
-  "children" | "className" | "tooltip" | "isActive" | "aria-label"
+  "children" | "className" | "tooltip" | "aria-label"
 >) {
   return (
     <Tooltip>

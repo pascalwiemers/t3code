@@ -37,8 +37,10 @@ export function buildHomeListFilterMenuItems(
     readonly projects: ReadonlyArray<HomeListFilterMenuProject>;
     readonly selectedEnvironmentId: EnvironmentId | null;
     readonly selectedProjectKey: string | null;
+    readonly hideOfflineThreads: boolean;
     readonly onEnvironmentChange: (environmentId: EnvironmentId | null) => void;
     readonly onProjectChange: (projectKey: string | null) => void;
+    readonly onHideOfflineThreadsChange: (value: boolean) => void;
   },
   resolve: MessageResolver = m,
 ): AppBarMenuItem[] {
@@ -86,5 +88,11 @@ export function buildHomeListFilterMenuItems(
     });
   }
 
+  items.push({
+    id: "hide-offline-threads",
+    title: resolve(msg("Hide offline threads")),
+    selected: props.hideOfflineThreads,
+    onPress: () => props.onHideOfflineThreadsChange(!props.hideOfflineThreads),
+  });
   return items;
 }

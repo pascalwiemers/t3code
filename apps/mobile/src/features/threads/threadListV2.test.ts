@@ -386,6 +386,40 @@ describe("getThreadListV2OrderedSection", () => {
 });
 
 describe("buildThreadListV2Items", () => {
+  it("excludes offline threads before counting shelves and ranking search results", () => {
+    const offline = EnvironmentId.make("offline");
+    const input = {
+      threads: [
+        makeThread({ id: ThreadId.make("live"), title: "Review active work" }),
+        makeThread({
+          id: ThreadId.make("cached"),
+          environmentId: offline,
+          title: "Review cached work",
+          settledOverride: "settled",
+          settledAt: NOW,
+        }),
+      ],
+      environmentId: null,
+      searchQuery: "",
+      now: NOW,
+    };
+    const visibleEnvironmentIds = new Set([environmentId]);
+    expect(buildThreadListV2Items(input).settledCount).toBe(1);
+    expect(buildThreadListV2Items({ ...input, visibleEnvironmentIds }).settledCount).toBe(0);
+    const search = { ...input, searchQuery: "Review" };
+    expect(
+      buildThreadListV2Items({ ...search, visibleEnvironmentIds }).items.map(
+        ({ thread }) => thread.id,
+      ),
+    ).toEqual(["live"]);
+    visibleEnvironmentIds.add(offline);
+    expect(
+      buildThreadListV2Items({ ...search, visibleEnvironmentIds }).items.map(
+        ({ thread }) => thread.id,
+      ),
+    ).toContain("cached");
+  });
+
   it("hides snoozed threads and counts them — visibility parity with web", () => {
     const layout = buildThreadListV2Items({
       threads: [

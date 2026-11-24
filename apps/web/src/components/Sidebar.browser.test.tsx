@@ -264,6 +264,58 @@ function threadShell(projectId: ProjectId, index: number): EnvironmentThreadShel
   });
 }
 
+describe("sidebar offline threads", () => {
+  it("filters cached rows and search results until their environment reconnects", async () => {
+    using stack = new DisposableStack();
+    const storageKey = "t3code:sidebar:hide-offline-threads";
+    window.localStorage.removeItem(storageKey);
+    stack.defer(() => window.localStorage.removeItem(storageKey));
+    const local = project("local");
+    const remote = { ...project("remote"), environmentId: EnvironmentId.make("remote") };
+    vi.mocked(useProjects).mockReturnValue([local, remote]);
+    vi.mocked(useQuietThreadShells).mockReturnValue([
+      { ...threadShell(local.id, 100), title: "Local thread" },
+      {
+        ...threadShell(remote.id, 101),
+        environmentId: remote.environmentId,
+        title: "Remote thread",
+      },
+    ]);
+    vi.mocked(useConnectedEnvironmentIds).mockReturnValue([local.environmentId]);
+    const tree = () => (
+      <SidebarProvider>
+        <Sidebar routeReveal={{ observedKey: null, pendingKey: null }} />
+      </SidebarProvider>
+    );
+    await using screen = await render(tree());
+    const toggle = screen.getByRole("button", { name: "Hide offline threads" });
+    const remoteRow = screen.getByText("Remote thread", { exact: true }).first();
+    await expect.element(remoteRow).toBeInTheDocument();
+    await toggle.click();
+    await expect.element(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect.element(remoteRow).not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Local thread", { exact: true }).first())
+      .toBeInTheDocument();
+
+    const search = screen.getByRole("combobox", { name: "Search threads" });
+    await search.fill("Remote thread");
+    await expect.element(remoteRow).not.toBeInTheDocument();
+    vi.mocked(useConnectedEnvironmentIds).mockReturnValue([
+      local.environmentId,
+      remote.environmentId,
+    ]);
+    await screen.rerender(tree());
+    await expect.element(remoteRow).toBeInTheDocument();
+
+    vi.mocked(useConnectedEnvironmentIds).mockReturnValue([local.environmentId]);
+    await screen.rerender(tree());
+    await expect.element(remoteRow).not.toBeInTheDocument();
+    await toggle.click();
+    await expect.element(remoteRow).toBeInTheDocument();
+  });
+});
+
 describe("sidebar render isolation", () => {
   // regression: #33100 Cmd+J re-rendered every sidebar row, which took hundreds of ms with many threads
   it("does not re-render thread rows when a quick Mod shortcut opens and focuses the terminal", async () => {

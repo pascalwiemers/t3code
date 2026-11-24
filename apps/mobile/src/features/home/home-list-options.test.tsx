@@ -18,7 +18,7 @@ import { HomeListOptionsProvider, useHomeListOptions } from "./home-list-options
 const ENVIRONMENT = "env-1" as EnvironmentId;
 const AVAILABLE = new Set([ENVIRONMENT]);
 
-it("saves the scope from every update made in one event", async () => {
+it("saves the filters from every update made in one event", async () => {
   harness.saved = [];
   let controls: ReturnType<typeof useHomeListOptions> | undefined;
   function Probe() {
@@ -40,12 +40,18 @@ it("saves the scope from every update made in one event", async () => {
   act(() => {
     controls!.setSelectedEnvironmentId(ENVIRONMENT);
     controls!.setSelectedProjectKey("env-1:project-1");
+    controls!.setHideOfflineThreads(true);
   });
 
   expect(harness.saved.at(-1)).toEqual({
-    threadListFilters: { environmentId: ENVIRONMENT, projectKey: "env-1:project-1" },
+    threadListFilters: {
+      environmentId: ENVIRONMENT,
+      projectKey: "env-1:project-1",
+      hideOfflineThreads: true,
+    },
   });
   expect(controls!.options.selectedEnvironmentId).toBe(ENVIRONMENT);
   expect(controls!.options.selectedProjectKey).toBe("env-1:project-1");
+  expect(controls!.options.hideOfflineThreads).toBe(true);
   act(() => root.unmount());
 });

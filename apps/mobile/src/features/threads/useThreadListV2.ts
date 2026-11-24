@@ -48,6 +48,7 @@ export function useThreadListV2(input: {
   readonly threads: LayoutInput["threads"];
   readonly pendingTasks: ReadonlyArray<PendingNewTask>;
   readonly environmentId: EnvironmentId | null;
+  readonly visibleEnvironmentIds?: readonly EnvironmentId[] | null;
   readonly projectRefs: LayoutInput["projectRefs"];
   readonly searchQuery: string;
   /** Threads that match the search by content, keyed like `threadSearchMatchKey`. */
@@ -68,6 +69,10 @@ export function useThreadListV2(input: {
   readonly selectedThreadKey: string | null;
 }) {
   const { threads, workingShelfEnabled } = input;
+  const visibleEnvironmentIds = useMemo(
+    () => (input.visibleEnvironmentIds == null ? null : new Set(input.visibleEnvironmentIds)),
+    [input.visibleEnvironmentIds],
+  );
   const layoutTime = useMemo(
     () => threadListV2LayoutTime({ threads, now: input.now, searchQuery: input.searchQuery }),
     [threads, input.now, input.searchQuery],
@@ -122,8 +127,9 @@ export function useThreadListV2(input: {
         environmentId: input.environmentId,
         projectRefs: input.projectRefs,
         settlementEnvironmentIds: input.settlementEnvironmentIds,
+        visibleEnvironmentIds,
       }),
-    [input.environmentId, input.projectRefs, input.settlementEnvironmentIds],
+    [input.environmentId, input.projectRefs, input.settlementEnvironmentIds, visibleEnvironmentIds],
   );
   const olderSettledShelf = useOlderSettledShelf({
     scopes,
@@ -138,6 +144,7 @@ export function useThreadListV2(input: {
         pendingOrder: input.pendingOrder,
         threads: threads.filter((thread) => thread.archivedAt === null),
         environmentId: input.environmentId,
+        visibleEnvironmentIds,
         projectRefs: input.projectRefs,
         searchQuery: input.searchQuery,
         matchedThreadKeys: new Set(input.searchMatches.keys()),
@@ -170,6 +177,7 @@ export function useThreadListV2(input: {
       input.pendingOrder,
       threads,
       input.environmentId,
+      visibleEnvironmentIds,
       input.projectRefs,
       input.searchQuery,
       input.searchMatches,
@@ -252,10 +260,12 @@ function olderSettledScopes(input: {
   readonly environmentId: EnvironmentId | null;
   readonly projectRefs: LayoutInput["projectRefs"];
   readonly settlementEnvironmentIds: ReadonlySet<EnvironmentId>;
+  readonly visibleEnvironmentIds: ReadonlySet<EnvironmentId> | null;
 }): ReadonlyArray<OlderSettledScope> {
   const environmentIds =
     input.environmentId === null ? [...input.settlementEnvironmentIds] : [input.environmentId];
   return environmentIds.flatMap((environmentId): ReadonlyArray<OlderSettledScope> => {
+    if (input.visibleEnvironmentIds?.has(environmentId) === false) return [];
     if (input.projectRefs == null) return [{ environmentId, projectIds: null }];
     const projectIds = input.projectRefs.flatMap((ref) =>
       ref.environmentId === environmentId ? [ref.projectId] : [],
